@@ -3,21 +3,40 @@ import Observation
 import UIKit
 import GoogleMobileAds
 
+/// Reward payload returned by ``AdmobRewardedController/present(from:)`` and
+/// ``AdmobRewardedInterstitialController/present(from:)``.
 public struct AdmobReward: Sendable, Hashable {
+    /// Reward amount, as reported by the SDK's `adReward`.
     public let amount: Decimal
+    /// Reward type label (e.g., "coins"), as reported by the SDK's `adReward`.
     public let type: String
 
+    /// Create a reward value. Typically constructed by the controller, not callers.
     public init(amount: Decimal, type: String) {
         self.amount = amount
         self.type = type
     }
 }
 
+/// One-shot rewarded ad controller with async load/present.
+///
+/// Lifecycle: ``load()`` → ``present(from:)`` → discarded. After a successful
+/// present (or any failure), the underlying ad object is released and
+/// ``isReady`` is set to `false`. Call ``load()`` again before the next
+/// ``present(from:)`` — or rely on ``autoReload`` to re-load automatically.
+///
+/// - Warning: Grant the in-app benefit **only** based on the non-nil
+///   ``AdmobReward`` returned from ``present(from:)``. Returning `nil` means
+///   the user dismissed without earning. Never grant benefits on dismissal
+///   alone — that's a policy violation and breaks reward economics.
 @MainActor
 @Observable
 public final class AdmobRewardedController {
+    /// `true` when a loaded ad is available to present.
     public private(set) var isReady: Bool = false
+    /// `true` while a `load()` call is in flight.
     public private(set) var isLoading: Bool = false
+    /// Localized message of the most recent load failure, or `nil` after success.
     public private(set) var lastErrorMessage: String?
 
     private let adUnitID: String
@@ -29,6 +48,13 @@ public final class AdmobRewardedController {
     private var pendingPresent: CheckedContinuation<AdmobReward?, Error>?
     private var earnedReward: AdmobReward?
 
+    /// Create a rewarded controller.
+    /// - Parameters:
+    ///   - adUnitID: AdMob ad unit ID for the rewarded format.
+    ///   - eventSink: Sink for load/present/reward lifecycle events.
+    ///   - autoReload: When `true` (default), the controller automatically
+    ///     re-loads after dismiss or failure. Set to `false` to manage reloads
+    ///     manually.
     public init(
         adUnitID: String,
         eventSink: AdmobEventSink = .none,
@@ -39,6 +65,8 @@ public final class AdmobRewardedController {
         self.autoReload = autoReload
     }
 
+    /// Load a rewarded ad. No-ops when a load is already in flight or an ad
+    /// is already ready.
     public func load() async {
         guard !isLoading, ad == nil else { return }
         isLoading = true
@@ -59,10 +87,20 @@ public final class AdmobRewardedController {
         isLoading = false
     }
 
-    /// Present the loaded rewarded ad. Returns the reward earned, or `nil` if
-    /// the user dismissed without earning. Throws if no ad is ready, no presenter
-    /// is available, a present call is already in flight, or the SDK reports a
-    /// presentation failure.
+    /// Present the loaded rewarded ad and await dismissal.
+    ///
+    /// - Parameter viewController: Presenter. When `nil`, the top-most
+    ///   foreground-scene view controller is resolved via
+    ///   ``RootViewControllerLocator``.
+    /// - Returns: The earned reward, or `nil` if the user dismissed the ad
+    ///   without earning. Grant the in-app benefit **only** when a non-nil
+    ///   reward is returned.
+    /// - Throws:
+    ///   - ``AdmobError/duplicateRequest(format:)`` when another `present` is
+    ///     already awaiting (continuation safety).
+    ///   - ``AdmobError/presentationUnavailable(reason:)`` when no ad is
+    ///     loaded, no presenter is available, or the SDK reports a presentation
+    ///     failure.
     @discardableResult
     public func present(from viewController: UIViewController? = nil) async throws -> AdmobReward? {
         guard pendingPresent == nil else {

@@ -2,19 +2,43 @@ import Foundation
 import Observation
 import UIKit
 
+/// Top-level coordinator that wires consent + SDK start and gates all ad work.
+///
+/// Construct one bootstrapper per app, typically in `@main`, and inject it via
+/// `.environment(bootstrapper)`. SwiftUI scenes then call ``start(presenting:)``
+/// from a `.task { }` modifier:
+///
+/// ```swift
+/// .task { await bootstrapper.start() }
+/// ```
+///
+/// - Important: ``start(presenting:)`` is **idempotent**. Calling it from every
+///   scene/view `.task` is safe — concurrent calls await the same in-flight
+///   `Task` and repeat calls after success no-op.
 @MainActor
 @Observable
 public final class AdmobBootstrapper {
+    /// The configuration this bootstrapper was created with.
     public let configuration: AdmobConfiguration
+    /// Consent coordinator that owns UMP state and form presentation.
     public let consent: AdmobConsentCoordinator
+    /// Event sink used for SDK-level events (startup, diagnostic warnings).
     public let eventSink: AdmobEventSink
 
+    /// `true` once `MobileAds.start` has completed successfully.
     public private(set) var isStarted: Bool = false
+    /// Human-readable description of the last start failure, or `nil`. Reserved for future use.
     public private(set) var lastStartErrorMessage: String?
 
     private let mobileAds: MobileAdsBridge
     private var startTask: Task<Void, Never>?
 
+    /// Designated initializer with injectable bridges. Use this in tests.
+    /// - Parameters:
+    ///   - configuration: Runtime configuration.
+    ///   - mobileAds: Mobile Ads SDK bridge (use ``LiveMobileAdsBridge`` in production).
+    ///   - consent: Pre-built consent coordinator.
+    ///   - eventSink: Sink for SDK-level events.
     public init(
         configuration: AdmobConfiguration,
         mobileAds: MobileAdsBridge,
@@ -27,7 +51,13 @@ public final class AdmobBootstrapper {
         self.eventSink = eventSink
     }
 
-    /// Convenience initializer that wires the live Google Mobile Ads and UMP bridges.
+    /// Convenience initializer that wires live Google Mobile Ads and UMP bridges.
+    ///
+    /// Use this in shipping apps. Tests should use the designated initializer
+    /// with fake bridges.
+    /// - Parameters:
+    ///   - configuration: Runtime configuration.
+    ///   - eventSink: Sink for SDK-level events.
     public convenience init(
         configuration: AdmobConfiguration,
         eventSink: AdmobEventSink = .none
@@ -43,13 +73,26 @@ public final class AdmobBootstrapper {
         )
     }
 
+    /// Composite gate that controllers and views must observe before requesting ads.
+    ///
+    /// All three conditions must hold: configuration permits ads
+    /// (``AdmobConfiguration/isAdRequestPermitted``), SDK is started, and consent
+    /// permits ad requests (``AdmobConsentCoordinator/canRequestAds``).
     public var canRequestAds: Bool {
         guard configuration.isAdRequestPermitted else { return false }
         return isStarted && consent.canRequestAds
     }
 
-    /// Run consent + SDK startup. Idempotent: concurrent or repeat calls await
-    /// the in-flight task. Safe to call from every scene/view lifecycle event.
+    /// Run consent refresh + SDK startup.
+    ///
+    /// **Idempotent.** Concurrent or repeat calls await the in-flight task,
+    /// so it is safe to call from every scene `.task` and from view `.task`
+    /// modifiers without coordination.
+    ///
+    /// - Parameter viewController: Optional presenter for the UMP consent form.
+    ///   When `nil`, consent info is refreshed but no form is presented.
+    /// - Note: If consent does not permit ad requests, SDK start is deferred.
+    ///   Call ``reconcile()`` after a later consent grant to complete startup.
     public func start(
         presenting viewController: UIViewController? = nil
     ) async {
@@ -88,7 +131,10 @@ public final class AdmobBootstrapper {
     }
 
     /// Re-evaluate consent state and start the SDK if it became permissible.
-    /// Useful after presenting the privacy options form.
+    ///
+    /// Call this after a late consent grant — typically after the user
+    /// completes the privacy options form via
+    /// ``AdmobConsentCoordinator/presentPrivacyOptions(from:)``.
     public func reconcile() async {
         guard !isStarted else { return }
         guard configuration.isAdRequestPermitted else { return }

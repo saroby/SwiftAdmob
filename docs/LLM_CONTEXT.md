@@ -1,159 +1,100 @@
-# SwiftUIAdmob LLM Context
+# SwiftUIAdmob — LLM Context
 
-## One-Screen Summary
+Optimised orientation for AI coding agents (Claude Code, Cursor, Copilot)
+working in this repository or integrating this package into a host app.
 
-`SwiftUIAdmob` is intended to be a Swift Package Manager library that makes
-Google AdMob easier to use from SwiftUI apps.
+For copy-pasteable usage patterns, read **`docs/AI_USAGE.md`** first. This
+file is the conceptual map; `AI_USAGE.md` is the cookbook.
 
-The package name is `SwiftUIAdmob`.
+## Current State (2026-05-17)
 
-The minimum supported platform is iOS 26.
+- **Version**: 1.0.0, released. Public API is stable — do not rename or
+  break signatures.
+- **Platform**: iOS 26 minimum, Swift 6 strict concurrency.
+- **Dependency**: Google Mobile Ads SDK 13.3.0 via
+  `https://github.com/googleads/swift-package-manager-google-mobile-ads.git`.
+- **Source**: 13 files under `Sources/SwiftUIAdmob/`.
+- **Tests**: Swift Testing suites under `Tests/SwiftUIAdmobTests/`. Live
+  Google ad requests are never made — `FakeMobileAdsBridge` and
+  `FakeConsentBridge` cover the testable surface.
 
-The project currently contains documentation only. Do not assume a package
-scaffold, source target, tests, or examples already exist.
+## Public API at a Glance
 
-## Current Repository State
+| Type                                   | Purpose                                                                              |
+|----------------------------------------|--------------------------------------------------------------------------------------|
+| `AdmobConfiguration`                   | Runtime mode (`.test` / `.production` / `.disabled`), ad unit IDs, debug settings.   |
+| `AdUnitIDMap` + `.googleTest`          | Typed ad unit ID map. `.googleTest` ships Google's test IDs for local dev.           |
+| `AdmobBootstrapper` (`@Observable`)    | Idempotent SDK + consent startup. Drives `canRequestAds`.                            |
+| `AdmobConsentCoordinator` (`@Observable`) | UMP wrapper: refresh, present required form, present privacy options, reset.     |
+| `AdmobBanner` + `.adBanner(_:)`        | Anchored-adaptive SwiftUI banner. Bottom/top safe-area modifier.                     |
+| `AdmobInterstitialController`          | Async `load`/`present`, one-shot, optional `autoReload`.                             |
+| `AdmobRewardedController`              | Same lifecycle as interstitial; `present()` returns the earned `AdmobReward?`.       |
+| `AdmobRewardedInterstitialController`  | Like rewarded, but **host must show intro screen** before `present()`.               |
+| `AdmobAppOpenCoordinator`              | Scene-phase aware, 4-hour expiration, cold-start guard, per-session suppression.     |
+| `MobileAdsBridge` / `ConsentBridge`    | Protocol seams. `Live*` implementations talk to Google; fakes power tests.           |
+| `AdmobEvent` + `AdmobEventSink`        | Sendable event pipeline for analytics. `.logging(label:)` writes through `OSLog`.    |
+| `AdmobError` (`LocalizedError`)        | Structured failures with `errorDescription` + `recoverySuggestion` + `failureReason`.|
+| `RootViewControllerLocator.find()`     | Topmost VC resolver for banners and full-screen presentation.                        |
 
-- `docs/ARCHITECTURE.md` contains the product architecture and implementation
-  direction.
-- `docs/LLM_CONTEXT.md` is this high-level orientation document.
-- `tasks/todo.md` tracks the current documentation-only task.
-- No `Package.swift` exists yet.
-- No Swift source files exist yet.
-- No tests exist yet.
-- The directory is not currently initialized as a git repository.
+## Core Invariants — AI Must NOT Violate
 
-## Primary Goal
+1. **Consent gates ads**. Never load or request ads when
+   `bootstrapper.canRequestAds == false`. The bootstrapper enforces this for
+   banners; full-screen controllers trust the caller.
+2. **Full-screen ads are one-shot**. `Interstitial`/`Rewarded`/
+   `RewardedInterstitial` discard the underlying `Ad` after present or
+   failure. Call `load()` again — or rely on `autoReload: true` (default).
+3. **Rewarded benefit must come from the SDK reward callback**. The package
+   exposes this as the value returned from `present()` (`AdmobReward?`). Grant
+   the in-app reward only when that value is non-nil. Never grant on dismiss.
+4. **App-open ads expire after 4 hours**
+   (`AdmobAppOpenCoordinator.expiration`). The coordinator handles this
+   internally — do not cache the underlying ad.
+5. **App-open cold-start guard**. `handleScenePhaseChange(_:)` consumes the
+   first `.active` as a load trigger only. Do not bypass this with manual
+   `showIfAvailable` calls during initial launch.
+6. **Suppress app-open during onboarding / IAP / login** by setting
+   `coordinator.isSuppressed = true`. Restore afterwards.
+7. **Rewarded Interstitial intro screen** is AdMob policy — the host app
+   must show it. The package does not enforce it; missing it can fail review.
+8. **Banner height is dynamic**. Use `AdmobBanner.height(forWidth:)` or rely
+   on `.adBanner(_:)` — never hard-code 50pt or any fixed value.
+9. **Bootstrapper is idempotent**. Call `await bootstrapper.start()` from
+   every scene's `.task` — concurrent and repeat calls await the same task.
+10. **Do not log raw production ad unit IDs**. `AdmobLogger` keeps them out of
+    its own output; sinks added by host apps must do the same.
 
-Build a thin, reliable SwiftUI layer over Google Mobile Ads for iOS 26 apps.
-The library should reduce boilerplate, not hide AdMob responsibilities that
-belong to the host app.
+## Host App Responsibilities (Out of Scope for This Package)
 
-## Non-Negotiable Constraints
+- `GADApplicationIdentifier` and `SKAdNetworkItems` in `Info.plist`.
+- AdMob console: register bundle ID, create ad units, publish UMP messages.
+- `ATTrackingManager.requestTrackingAuthorization` timing and copy.
+- Ad placement policy: natural breaks, frequency, reward economics.
+- App Store Connect privacy disclosures.
+- Mediation adapter dependency decisions.
 
-- Do not create code unless the user explicitly asks for implementation.
-- Keep the package SwiftUI-first at the public API boundary.
-- Keep UIKit and Google delegate machinery behind bridge/coordinator types.
-- Treat consent as a first-class gate before ad requests.
-- Keep host-app responsibilities explicit.
-- Use Google test ad unit IDs for examples and manual testing.
-- Avoid live production ad requests in tests.
-- Do not hard-code a fixed banner height for adaptive banners.
-- Do not make App Store privacy or ATT claims that the package cannot guarantee.
+See `docs/HOST_APP_SETUP.md` for the full checklist.
 
-## Host App Responsibilities
+## Where To Look Next
 
-Future implementation and docs must keep these outside the package:
+| Question                                              | File                                |
+|-------------------------------------------------------|-------------------------------------|
+| "How do I add a rewarded ad?"                         | `docs/AI_USAGE.md`                  |
+| "What does the host app need in Info.plist?"          | `docs/HOST_APP_SETUP.md`            |
+| "Why was this designed this way?"                     | `docs/ARCHITECTURE.md`              |
+| "What changed in this release?"                       | `CHANGELOG.md`                      |
+| "What error means what?"                              | `Sources/SwiftUIAdmob/Support.swift` (see `recoverySuggestion`) |
+| "How are tests structured?"                           | `Tests/SwiftUIAdmobTests/`          |
 
-- Registering the app in AdMob.
-- Supplying real ad unit IDs.
-- Adding `GADApplicationIdentifier` to `Info.plist`.
-- Adding `SKAdNetworkItems` to `Info.plist`.
-- Reviewing App Store Connect data disclosure.
-- Deciding whether and when to request ATT authorization.
-- Choosing ad placement timing and frequency.
-- Making mediation dependency decisions.
+## Source-of-Truth Precedence
 
-## Planned Package Responsibilities
+When sources disagree:
 
-The package should provide:
+1. The current `Sources/SwiftUIAdmob/*.swift` files.
+2. `CHANGELOG.md` for the latest release.
+3. `docs/AI_USAGE.md` for usage patterns.
+4. `docs/ARCHITECTURE.md` for design rationale.
+5. This document (`LLM_CONTEXT.md`) — orientation only.
 
-- Runtime configuration for test, production, and disabled modes.
-- SDK startup orchestration.
-- UMP consent coordination.
-- SwiftUI banner views and placement modifiers.
-- Async full-screen ad controllers.
-- App open ad coordination.
-- Native ad loading support in a later milestone.
-- Structured diagnostics and lifecycle events.
-- Fakes or protocol-backed bridges for tests.
-
-## Important External Assumptions
-
-These were checked on 2026-05-16:
-
-- Official Google Mobile Ads iOS setup requires Xcode 16.0+ and targets iOS
-  13.0+ at the SDK level. This package intentionally requires iOS 26.
-- Official Google Mobile Ads SPM package URL:
-  `https://github.com/googleads/swift-package-manager-google-mobile-ads.git`
-- Current official package manifest exposes the `GoogleMobileAds` product,
-  depends on `GoogleUserMessagingPlatform`, and points to Google Mobile Ads SDK
-  13.3.0.
-- Google setup docs require host apps to add `GADApplicationIdentifier` and
-  `SKAdNetworkItems`.
-- Google UMP docs require checking `ConsentInformation.shared.canRequestAds`
-  before requesting ads.
-
-Re-check official Google docs before implementing because SDK APIs and policy
-guidance can change.
-
-## Architecture Keywords
-
-Use these names consistently unless there is a strong reason to change them:
-
-- `AdmobConfiguration`
-- `AdmobBootstrapper`
-- `AdmobConsentCoordinator`
-- `AdmobBanner`
-- `AdmobInterstitialController`
-- `AdmobRewardedController`
-- `AdmobRewardedInterstitialController`
-- `AdmobAppOpenCoordinator`
-- `AdmobNativeAdLoader`
-- `AdmobEvent`
-- `AdmobError`
-
-The exact public API is not final, but these names express the intended
-boundaries.
-
-## Recommended Implementation Order
-
-1. Create `Package.swift` with iOS 26 minimum and Google Mobile Ads dependency.
-2. Add configuration, diagnostics, and SDK bridge protocols.
-3. Add consent coordinator with fakeable UMP bridge.
-4. Add banner view as the first vertical slice.
-5. Add tests for configuration, consent gating, and banner sizing.
-6. Add interstitial and rewarded controllers.
-7. Add app open coordination.
-8. Add native ad loading and optional templates.
-9. Add README and host-app setup guide.
-10. Add example app only after the core API is stable.
-
-## Verification Expectations
-
-When implementation begins, a change is not done until it has a verification
-story.
-
-Preferred checks:
-
-- `swift build`
-- `swift test`
-- Example app build on an iOS simulator when examples exist.
-- Manual verification with Google test ad IDs only when UI behavior is involved.
-
-If no package scaffold exists, do not claim build or test verification.
-
-## Common Pitfalls
-
-- Starting Google Mobile Ads before consent-sensitive flags are resolved.
-- Loading ads twice because multiple consent callbacks report requestability.
-- Treating full-screen ads as reusable after presentation.
-- Showing interstitials outside natural breaks.
-- Granting rewarded benefits outside the SDK reward callback.
-- Showing app open ads after the main content is already interactive.
-- Forgetting app open ad expiration.
-- Rendering native ads without preserving required attribution and AdChoices UI.
-- Assuming an SPM package can fix missing host app `Info.plist` keys.
-- Logging real ad unit IDs in production diagnostics.
-
-## Source Of Truth
-
-For product direction, read:
-
-1. `docs/ARCHITECTURE.md`
-2. `docs/LLM_CONTEXT.md`
-3. User's latest request in the active conversation
-
-For Google SDK behavior, use official Google documentation and the official
-Google SPM package manifest. Do not rely on old blog posts or third-party
-tutorials without verifying against current official sources.
+If this document conflicts with the code, the code wins. File an issue (or
+update this file in the same PR).

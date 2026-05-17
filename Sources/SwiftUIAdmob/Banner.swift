@@ -4,15 +4,34 @@ import GoogleMobileAds
 
 // MARK: - Public events
 
+/// View-local banner lifecycle events delivered to the `onEvent` closure.
+///
+/// These mirror a subset of ``AdmobEvent`` shaped for the banner surface.
+/// Use the bootstrapper-level event sink for cross-cutting analytics.
 public enum AdmobBannerEvent: Sendable {
+    /// A banner ad payload finished loading.
     case loaded
+    /// The banner failed to load. `message` is the SDK's localized description.
     case failed(message: String)
+    /// An impression was recorded for the displayed ad.
     case impressed
+    /// The user tapped the banner.
     case clicked
 }
 
 // MARK: - Banner view
 
+/// SwiftUI banner view that lays out using AdMob's large anchored adaptive sizing.
+///
+/// Reads ``AdmobBootstrapper`` from the environment and gates ad requests on
+/// ``AdmobBootstrapper/canRequestAds``. Width is observed via
+/// `onGeometryChange`; the underlying banner reloads only when the resolved
+/// width or ad unit ID changes.
+///
+/// - Important: Never hard-code a height for adaptive banners. Use
+///   ``height(forWidth:)`` if you need the value outside this view.
+/// - Note: When ``AdmobBootstrapper/canRequestAds`` flips to `false`
+///   mid-session, the underlying banner is hidden until it flips back.
 @MainActor
 public struct AdmobBanner: View {
     private let explicitAdUnitID: String?
@@ -21,6 +40,11 @@ public struct AdmobBanner: View {
     @Environment(AdmobBootstrapper.self) private var bootstrapper
     @State private var measuredWidth: CGFloat = 0
 
+    /// Create a banner view.
+    /// - Parameters:
+    ///   - adUnitID: Explicit ad unit ID. When `nil`, falls back to
+    ///     ``AdUnitIDMap/banner`` from the environment bootstrapper.
+    ///   - onEvent: Optional per-instance event callback.
     public init(
         adUnitID: String? = nil,
         onEvent: ((AdmobBannerEvent) -> Void)? = nil
@@ -49,8 +73,14 @@ public struct AdmobBanner: View {
         }
     }
 
-    /// Adaptive banner height in points for a given container width.
-    /// Returns `0` for non-positive widths.
+    /// Compute the adaptive banner height in points for a given container width.
+    ///
+    /// Equivalent to the height returned by
+    /// `largeAnchoredAdaptiveBanner(width:)`. Use this when laying out
+    /// placeholders so the surrounding content doesn't shift when the banner
+    /// loads.
+    /// - Parameter width: Container width in points.
+    /// - Returns: Adaptive banner height in points, or `0` for non-positive widths.
     public static func height(forWidth width: CGFloat) -> CGFloat {
         guard width > 0 else { return 0 }
         return largeAnchoredAdaptiveBanner(width: width).size.height
@@ -59,16 +89,26 @@ public struct AdmobBanner: View {
 
 // MARK: - Modifier
 
+/// Placement edge used by ``SwiftUICore/View/adBanner(_:adUnitID:onEvent:)``.
 public enum AdmobBannerPlacement: Sendable {
+    /// Pin the banner to the top safe-area edge.
     case top
+    /// Pin the banner to the bottom safe-area edge.
     case bottom
 }
 
 public extension View {
-    /// Pin a SwiftUI-native AdMob banner to the leading edge of a screen.
+    /// Pin a SwiftUI-native AdMob banner to a safe-area edge of this view.
     ///
-    /// Uses ``View/safeAreaInset(edge:)`` so the banner does not overlap content
-    /// and adapts to safe areas automatically.
+    /// Uses `safeAreaInset(edge:spacing:)` so the banner does not overlap
+    /// content. Width is driven by the container; height is the adaptive
+    /// banner height. See ``AdmobBanner`` for the underlying behavior.
+    ///
+    /// - Parameters:
+    ///   - placement: Which safe-area edge to pin to. Defaults to `.bottom`.
+    ///   - adUnitID: Explicit ad unit ID. When `nil`, the environment
+    ///     bootstrapper's banner ID is used.
+    ///   - onEvent: Optional per-instance event callback.
     func adBanner(
         _ placement: AdmobBannerPlacement = .bottom,
         adUnitID: String? = nil,
@@ -82,11 +122,15 @@ public extension View {
     }
 }
 
+/// `ViewModifier` backing ``SwiftUICore/View/adBanner(_:adUnitID:onEvent:)``.
 @MainActor
 public struct AdmobBannerModifier: ViewModifier {
-    let placement: AdmobBannerPlacement
-    let adUnitID: String?
-    let onEvent: ((AdmobBannerEvent) -> Void)?
+    /// Edge to pin the banner to.
+    public let placement: AdmobBannerPlacement
+    /// Optional explicit ad unit ID; falls back to environment when `nil`.
+    public let adUnitID: String?
+    /// Per-instance event callback.
+    public let onEvent: ((AdmobBannerEvent) -> Void)?
 
     public func body(content: Content) -> some View {
         content.safeAreaInset(edge: placement == .top ? .top : .bottom, spacing: 0) {

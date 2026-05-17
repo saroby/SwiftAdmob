@@ -50,6 +50,48 @@ extension AdmobError: LocalizedError {
             return "Ads are disabled by configuration."
         }
     }
+
+    /// Actionable next step for each failure mode. Surfaced through
+    /// `LocalizedError.recoverySuggestion` so AI coding agents and human
+    /// developers see a concrete fix in logs and error dialogs.
+    public var recoverySuggestion: String? {
+        switch self {
+        case .missingHostConfiguration:
+            return "Add GADApplicationIdentifier and SKAdNetworkItems to your app's Info.plist. See docs/HOST_APP_SETUP.md for the full checklist."
+        case .sdkNotStarted:
+            return "Call `await bootstrapper.start()` from your root scene's `.task` modifier before requesting ads. AdmobBootstrapper.start is idempotent."
+        case .consentNotResolved:
+            return "Run `await bootstrapper.start()` to gather UMP consent, then inspect `bootstrapper.canRequestAds` before loading. Use `bootstrapper.reconcile()` after the user grants consent via the privacy options form."
+        case .missingAdUnitID(let format):
+            return "Set `adUnits.\(format.rawValue)` on AdmobConfiguration, or pass `adUnitID:` explicitly to the controller. Use `AdUnitIDMap.googleTest` for local development."
+        case .loadFailed:
+            return "Retry `load()` after a short delay. Verify network connectivity and that the ad unit ID exists in the AdMob console for this app bundle ID."
+        case .presentationUnavailable:
+            return "Verify the controller is loaded (isReady == true), no other `present()` is in flight, and a presenting UIViewController is available. Full-screen ads are one-shot — `load()` again before the next `present()`."
+        case .adExpired(let format):
+            return "Discard the cached ad and call `load()` again. \(format.rawValue) ads expire — app-open ads must be discarded after 4 hours (AdmobAppOpenCoordinator.expiration)."
+        case .duplicateRequest:
+            return "Another `present()` call is awaiting dismissal. Await its completion before invoking `present()` again — controllers serialize one presentation at a time."
+        case .disabledByConfiguration:
+            return "Use `AdmobConfiguration.development()` for test ads, or build a `.production` configuration with real ad unit IDs. `.disabled` blocks all ad requests intentionally."
+        }
+    }
+
+    /// Short failure category, suitable for analytics tagging. Stable across
+    /// release versions even if `errorDescription` wording is tuned.
+    public var failureReason: String? {
+        switch self {
+        case .missingHostConfiguration: return "missing_host_configuration"
+        case .sdkNotStarted: return "sdk_not_started"
+        case .consentNotResolved: return "consent_not_resolved"
+        case .missingAdUnitID: return "missing_ad_unit_id"
+        case .loadFailed: return "load_failed"
+        case .presentationUnavailable: return "presentation_unavailable"
+        case .adExpired: return "ad_expired"
+        case .duplicateRequest: return "duplicate_request"
+        case .disabledByConfiguration: return "disabled_by_configuration"
+        }
+    }
 }
 
 // MARK: - Events
