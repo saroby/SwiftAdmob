@@ -4,6 +4,18 @@ All notable changes to SwiftUIAdmob are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+
+- `AdmobBanner` now uses the standard `AdSizeBanner` (320x50) instead of the
+  large anchored adaptive variant. The previous large adaptive ad size
+  produced ~100pt+ heights that overlapped bottom toolbars and floating
+  buttons. Anchored adaptive APIs (both regular and large) are also Google's
+  current recommendation but produce variable heights; 320x50 gives a
+  predictable, non-deprecated baseline. `AdmobBanner.height(forWidth:)` now
+  returns 50 for any positive width.
+
 ## [1.0.0] - 2026-05-17
 
 Initial public release.

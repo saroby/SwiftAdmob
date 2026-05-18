@@ -21,7 +21,7 @@ public enum AdmobBannerEvent: Sendable {
 
 // MARK: - Banner view
 
-/// SwiftUI banner view that lays out using AdMob's large anchored adaptive sizing.
+/// SwiftUI banner view that lays out using AdMob's standard 320x50 anchored banner.
 ///
 /// Reads ``AdmobBootstrapper`` from the environment and gates ad requests on
 /// ``AdmobBootstrapper/canRequestAds``. Width is observed via
@@ -73,17 +73,16 @@ public struct AdmobBanner: View {
         }
     }
 
-    /// Compute the adaptive banner height in points for a given container width.
+    /// Compute the banner height in points for a given container width.
     ///
-    /// Equivalent to the height returned by
-    /// `largeAnchoredAdaptiveBanner(width:)`. Use this when laying out
-    /// placeholders so the surrounding content doesn't shift when the banner
-    /// loads.
+    /// Returns the standard 320x50 anchored banner height (50pt) for any
+    /// positive width. Use this when laying out placeholders so the
+    /// surrounding content doesn't shift when the banner loads.
     /// - Parameter width: Container width in points.
-    /// - Returns: Adaptive banner height in points, or `0` for non-positive widths.
+    /// - Returns: Banner height in points, or `0` for non-positive widths.
     public static func height(forWidth width: CGFloat) -> CGFloat {
         guard width > 0 else { return 0 }
-        return largeAnchoredAdaptiveBanner(width: width).size.height
+        return AdSizeBanner.size.height
     }
 }
 
@@ -183,7 +182,7 @@ struct BannerHost: UIViewRepresentable {
             uiView.rootViewController = RootViewControllerLocator.find()
         }
 
-        let nextSize = largeAnchoredAdaptiveBanner(width: width)
+        let nextSize = AdSizeBanner
         let widthChanged = abs(context.coordinator.lastRequestedWidth - width) >= 1
         let unitChanged = uiView.adUnitID != adUnitID
         let needsReload = unitChanged || widthChanged
