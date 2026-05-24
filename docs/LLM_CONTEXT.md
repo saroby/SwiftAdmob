@@ -6,9 +6,9 @@ working in this repository or integrating this package into a host app.
 For copy-pasteable usage patterns, read **`docs/AI_USAGE.md`** first. This
 file is the conceptual map; `AI_USAGE.md` is the cookbook.
 
-## Current State (2026-05-17)
+## Current State (2026-05-24)
 
-- **Version**: 1.0.0, released. Public API is stable — do not rename or
+- **Version**: 1.0.1, released. Public API is stable — do not rename or
   break signatures.
 - **Platform**: iOS 26 minimum, Swift 6 strict concurrency.
 - **Dependency**: Google Mobile Ads SDK 13.3.0 via

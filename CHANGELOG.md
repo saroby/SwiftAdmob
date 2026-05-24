@@ -6,6 +6,8 @@ All notable changes to SwiftUIAdmob are documented here. Format follows
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-05-24
+
 ### Changed
 
 - `AdmobBanner` now uses the standard `AdSizeBanner` (320x50) instead of the
@@ -15,6 +17,17 @@ All notable changes to SwiftUIAdmob are documented here. Format follows
   current recommendation but produce variable heights; 320x50 gives a
   predictable, non-deprecated baseline. `AdmobBanner.height(forWidth:)` now
   returns 50 for any positive width.
+
+### Docs
+
+- `SwiftUIAdmob` namespace and `AdmobBootstrapper` DocC now link to Google's
+  official AdMob iOS quick-start
+  (<https://developers.google.com/admob/ios/quick-start>) so host-app
+  integrators (and AI coding agents reading the public API) are pointed at
+  the upstream source of truth for `Info.plist` / `SKAdNetworkItems` /
+  AdMob console setup.
+- `docs/HOST_APP_SETUP.md` opens with an explicit "source of truth" callout
+  that defers to Google's docs when they disagree with the local checklist.
 
 ## [1.0.0] - 2026-05-17
 

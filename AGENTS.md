@@ -8,7 +8,7 @@ If you are integrating this package into a host app, read
 
 ## Repository Status
 
-- **Version**: 1.0.0, released. Public API is **stable** — do not rename,
+- **Version**: 1.0.1, released. Public API is **stable** — do not rename,
   remove, or change signatures without an explicit user request to bump the
   major version.
 - **Platform**: iOS 26 minimum, Swift 6 with strict concurrency. Do not

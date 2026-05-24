@@ -15,6 +15,17 @@ import UIKit
 /// - Important: ``start(presenting:)`` is **idempotent**. Calling it from every
 ///   scene/view `.task` is safe — concurrent calls await the same in-flight
 ///   `Task` and repeat calls after success no-op.
+///
+/// ## External references
+///
+/// Before wiring this type into a host app, make sure the project satisfies
+/// Google's official iOS quick-start (Info.plist `GADApplicationIdentifier`,
+/// `SKAdNetworkItems`, AdMob console registration). The bootstrapper assumes
+/// these are already in place and will fatal-assert via the underlying SDK
+/// otherwise.
+///
+/// - Google AdMob iOS quick-start: <https://developers.google.com/admob/ios/quick-start>
+/// - Host-side checklist in this repo: `docs/HOST_APP_SETUP.md`
 @MainActor
 @Observable
 public final class AdmobBootstrapper {

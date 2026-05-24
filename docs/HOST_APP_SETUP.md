@@ -1,5 +1,13 @@
 # Host App Setup
 
+> **Source of truth for host setup**: Google AdMob iOS quick-start —
+> <https://developers.google.com/admob/ios/quick-start>
+>
+> This document mirrors the host-app responsibilities for `SwiftUIAdmob`
+> integrators. When Google's docs disagree with this file (SDK version,
+> `SKAdNetworkItems` list, console flow), Google wins — open an issue so
+> this file can be updated.
+
 `SwiftUIAdmob` is a Swift Package. There are a handful of things it cannot
 configure on your behalf — your application target must own them.
 

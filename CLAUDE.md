@@ -7,7 +7,7 @@ For host-app integration help, read **[`docs/AI_USAGE.md`](docs/AI_USAGE.md)**.
 
 ## Quick reminders (also in AGENTS.md)
 
-- Public API is **stable at v1.0.0** — no renames or signature changes.
+- Public API is **stable at v1.0.1** — no renames or signature changes.
 - Tests use `FakeMobileAdsBridge` / `FakeConsentBridge` — never hit live
   Google ad servers.
 - iOS 26 / Swift 6 strict concurrency are fixed; do not lower.

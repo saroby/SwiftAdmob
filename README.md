@@ -9,7 +9,7 @@ to the host app.
 
 ## Status
 
-Version **1.0.0**. See `docs/ARCHITECTURE.md` and `docs/LLM_CONTEXT.md` for
+Version **1.0.1**. See `docs/ARCHITECTURE.md` and `docs/LLM_CONTEXT.md` for
 design rationale and `docs/HOST_APP_SETUP.md` for required host-app integration.
 
 ## Features
