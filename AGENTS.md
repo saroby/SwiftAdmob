@@ -29,9 +29,11 @@ If you are integrating this package into a host app, read
    `ATTrackingManager` prompts, ad placement policy, App Store Connect
    privacy disclosures all belong to the host app. The package documents
    them in `docs/HOST_APP_SETUP.md`; it does not own them.
-4. **Do not hard-code banner heights**. Anchored adaptive sizing is
-   non-negotiable. Use `AdmobBanner.height(forWidth:)` or rely on
-   `.adBanner(_:)`.
+4. **Do not hard-code adaptive banner heights**. `AdmobBanner` is fixed
+   320x50 and `AdmobVerticalBanner` is fixed 120x600 — those constants are
+   fine. `AdmobAdaptiveBanner` has a dynamic 50–150pt height; use
+   `AdmobAdaptiveBanner.height(forWidth:)` or rely on
+   `.adAdaptiveBanner(_:)` so `safeAreaInset` handles layout.
 5. **`@MainActor` everywhere user-facing**. Bootstrapper, coordinators,
    controllers, banner — all `@MainActor`. SDK delegate callbacks come in
    off the main actor; hop via `Task { @MainActor in ... }` before touching

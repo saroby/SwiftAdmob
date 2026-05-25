@@ -49,8 +49,14 @@ cannot configure them for you.
 ## Decision Tree: Which API?
 
 ```
-Persistent inline ad in a screen?
+Persistent inline ad in a screen, fixed 320x50?
 └─> AdmobBanner / .adBanner(.bottom | .top)
+
+Persistent inline ad, can spare 50–150pt of vertical room (higher fill)?
+└─> AdmobAdaptiveBanner / .adAdaptiveBanner(.bottom | .top)
+
+Tall vertical sidebar slot (iPad, 120x600)?
+└─> AdmobVerticalBanner
 
 Full-screen ad at a natural break (level end, screen transition)?
 └─> AdmobInterstitialController
@@ -76,13 +82,32 @@ Native ad (custom layout)?
 
 ## Banner
 
+Three banner views ship with the package:
+
+| View                    | Size                                | When to pick                                                  |
+|-------------------------|-------------------------------------|---------------------------------------------------------------|
+| `AdmobBanner`           | Fixed 320x50 (`AdSizeBanner`)       | Predictable footprint, won't shift bottom toolbars / FABs.    |
+| `AdmobAdaptiveBanner`   | Anchored adaptive, 50–150pt height  | Host layout has flexible vertical room and wants higher fill. |
+| `AdmobVerticalBanner`   | Fixed 120x600 (`AdSizeSkyscraper`)  | iPad sidebar / tall narrow slot.                              |
+
 ### ✅ Do
 
 ```swift
 struct ContentScreen: View {
     var body: some View {
         ScrollView { /* content */ }
-            .adBanner(.bottom)               // Adaptive, safe-area aware.
+            .adBanner(.bottom)               // Fixed 320x50, safe-area aware.
+    }
+}
+```
+
+For higher-fill anchored adaptive (taller, variable height):
+
+```swift
+struct ContentScreen: View {
+    var body: some View {
+        ScrollView { /* content */ }
+            .adAdaptiveBanner(.bottom)       // Anchored adaptive, 50–150pt.
     }
 }
 ```
@@ -102,14 +127,19 @@ AdmobBanner(adUnitID: AdUnitIDMap.googleTest.banner) { event in
 ### ❌ Don't
 
 ```swift
-// ❌ Hard-coded height — adaptive banners size by width.
-AdmobBanner().frame(height: 50)
+// ❌ Hard-coded height on the adaptive banner — height varies by width/device.
+AdmobAdaptiveBanner().frame(height: 50)
+// Use AdmobAdaptiveBanner.height(forWidth:) to reserve the resolved value.
 
 // ❌ Conditioning on a stale ad-unit-ID literal.
 AdmobBanner(adUnitID: "ca-app-pub-3940256099942544/2934735716") // copy-paste rot risk
 
 // ❌ Skipping the bootstrapper in the environment.
 RootView().adBanner(.bottom) // AdmobBanner reads AdmobBootstrapper from @Environment
+
+// ❌ Pinning AdmobAdaptiveBanner manually over a bottom toolbar without
+//    safeAreaInset — the 100pt+ tall variant will overlap content.
+//    Use `.adAdaptiveBanner(.bottom)` so safe-area insets push content up.
 ```
 
 ---
@@ -354,7 +384,8 @@ Log it. AI agents reading the log can usually self-correct.
 
 ## Anti-Pattern Summary (one-liners)
 
-- ❌ Hard-coding `50pt` banner height.
+- ❌ Hard-coding a height on `AdmobAdaptiveBanner` (size varies; use
+  `AdmobAdaptiveBanner.height(forWidth:)`).
 - ❌ Re-presenting a full-screen controller without `load()`.
 - ❌ Granting rewards outside the `AdmobReward?` returned by `present()`.
 - ❌ Showing rewarded interstitial without an intro/opt-out screen.

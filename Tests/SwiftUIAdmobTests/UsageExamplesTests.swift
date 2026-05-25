@@ -28,15 +28,36 @@ struct BannerHeightTests {
         #expect(AdmobBanner.height(forWidth: -10) == 0)
     }
 
-    @Test("Positive width yields a positive bounded adaptive height")
+    @Test("Positive width returns the standard 320x50 banner height")
     func positiveWidth() {
-        let height320 = AdmobBanner.height(forWidth: 320)
-        let height390 = AdmobBanner.height(forWidth: 390)
-        #expect(height320 > 0)
-        #expect(height390 > 0)
-        // Anchored adaptive banner heights are bounded; sanity-check the upper end.
-        #expect(height320 <= 250)
-        #expect(height390 <= 250)
+        // AdmobBanner is fixed 320x50 since 1.0.1; height is constant
+        // regardless of container width.
+        #expect(AdmobBanner.height(forWidth: 320) == 50)
+        #expect(AdmobBanner.height(forWidth: 390) == 50)
+        #expect(AdmobBanner.height(forWidth: 768) == 50)
+    }
+}
+
+@Suite("AdmobAdaptiveBanner.height")
+@MainActor
+struct AdaptiveBannerHeightTests {
+    @Test("Non-positive width returns zero")
+    func zeroWidth() {
+        #expect(AdmobAdaptiveBanner.height(forWidth: 0) == 0)
+        #expect(AdmobAdaptiveBanner.height(forWidth: -10) == 0)
+    }
+
+    @Test("Positive width yields a height in the 50–150pt adaptive range")
+    func positiveWidth() {
+        let height320 = AdmobAdaptiveBanner.height(forWidth: 320)
+        let height390 = AdmobAdaptiveBanner.height(forWidth: 390)
+        // GADLargeAnchoredAdaptiveBannerAdSize is documented as
+        // 50–150pt for any width/device combination. Test the contract,
+        // not a specific SDK-computed value.
+        #expect(height320 >= 50)
+        #expect(height320 <= 150)
+        #expect(height390 >= 50)
+        #expect(height390 <= 150)
     }
 }
 
@@ -154,6 +175,27 @@ private struct _TopBannerExample: View {
 private struct _InlineBannerExample: View {
     var body: some View {
         AdmobBanner(adUnitID: AdUnitIDMap.googleTest.banner) { event in
+            switch event {
+            case .loaded, .failed, .impressed, .clicked:
+                break
+            }
+        }
+    }
+}
+
+// MARK: - Compile-only example: adaptive banner placement
+
+@MainActor
+private struct _AdaptiveBannerExample: View {
+    var body: some View {
+        Color.clear.adAdaptiveBanner(.bottom)
+    }
+}
+
+@MainActor
+private struct _InlineAdaptiveBannerExample: View {
+    var body: some View {
+        AdmobAdaptiveBanner(adUnitID: AdUnitIDMap.googleTest.banner) { event in
             switch event {
             case .loaded, .failed, .impressed, .clicked:
                 break

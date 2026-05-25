@@ -26,7 +26,9 @@ file is the conceptual map; `AI_USAGE.md` is the cookbook.
 | `AdUnitIDMap` + `.googleTest`          | Typed ad unit ID map. `.googleTest` ships Google's test IDs for local dev.           |
 | `AdmobBootstrapper` (`@Observable`)    | Idempotent SDK + consent startup. Drives `canRequestAds`.                            |
 | `AdmobConsentCoordinator` (`@Observable`) | UMP wrapper: refresh, present required form, present privacy options, reset.     |
-| `AdmobBanner` + `.adBanner(_:)`        | Anchored-adaptive SwiftUI banner. Bottom/top safe-area modifier.                     |
+| `AdmobBanner` + `.adBanner(_:)`        | Fixed 320x50 SwiftUI banner. Bottom/top safe-area modifier.                          |
+| `AdmobAdaptiveBanner` + `.adAdaptiveBanner(_:)` | Anchored-adaptive SwiftUI banner (50–150pt height). Bottom/top safe-area modifier. |
+| `AdmobVerticalBanner`                  | Fixed 120x600 (`AdSizeSkyscraper`) SwiftUI banner for sidebar / tall slots.          |
 | `AdmobInterstitialController`          | Async `load`/`present`, one-shot, optional `autoReload`.                             |
 | `AdmobRewardedController`              | Same lifecycle as interstitial; `present()` returns the earned `AdmobReward?`.       |
 | `AdmobRewardedInterstitialController`  | Like rewarded, but **host must show intro screen** before `present()`.               |
@@ -57,8 +59,10 @@ file is the conceptual map; `AI_USAGE.md` is the cookbook.
    `coordinator.isSuppressed = true`. Restore afterwards.
 7. **Rewarded Interstitial intro screen** is AdMob policy — the host app
    must show it. The package does not enforce it; missing it can fail review.
-8. **Banner height is dynamic**. Use `AdmobBanner.height(forWidth:)` or rely
-   on `.adBanner(_:)` — never hard-code 50pt or any fixed value.
+8. **Banner sizing depends on the view**. `AdmobBanner` is fixed 320x50.
+   `AdmobAdaptiveBanner` has a dynamic height (50–150pt) — use
+   `AdmobAdaptiveBanner.height(forWidth:)` to reserve space; never
+   hard-code a height on it. `AdmobVerticalBanner` is fixed 120x600.
 9. **Bootstrapper is idempotent**. Call `await bootstrapper.start()` from
    every scene's `.task` — concurrent and repeat calls await the same task.
 10. **Do not log raw production ad unit IDs**. `AdmobLogger` keeps them out of

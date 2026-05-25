@@ -6,6 +6,32 @@ All notable changes to SwiftUIAdmob are documented here. Format follows
 
 ## [Unreleased]
 
+## [1.0.3] - 2026-05-25
+
+### Added
+
+- `AdmobAdaptiveBanner` — new SwiftUI view that lays out using AdMob's
+  ``largeAnchoredAdaptiveBanner(width:)`` size. Height is dynamic
+  (50–150pt depending on width and current interface orientation), so
+  the host layout must tolerate variable banner height.
+  ``AdmobAdaptiveBanner.height(forWidth:)`` returns the SDK-resolved
+  height for a given width so callers can reserve space.
+- `.adAdaptiveBanner(_:adUnitID:onEvent:)` — view modifier that pins an
+  `AdmobAdaptiveBanner` to the top or bottom safe-area edge, mirroring
+  `.adBanner(_:adUnitID:onEvent:)`. `safeAreaInset` placement keeps the
+  taller adaptive sizes from overlapping content.
+
+### Notes
+
+- ``AdmobBanner`` (fixed 320x50) and ``AdmobVerticalBanner`` (fixed
+  120x600) are unchanged. The three banner views now cover: fixed
+  horizontal, anchored adaptive horizontal, and fixed vertical
+  placements.
+- AdMob deprecated the non-`large` anchored adaptive sizes
+  (`currentOrientationAnchoredAdaptiveBanner` etc.) in favour of the
+  `large*` variants. `AdmobAdaptiveBanner` uses the non-deprecated
+  `largeAnchoredAdaptiveBanner(width:)`.
+
 ## [1.0.2] - 2026-05-25
 
 ### Added

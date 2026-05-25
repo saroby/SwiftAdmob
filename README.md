@@ -17,8 +17,13 @@ design rationale and `docs/HOST_APP_SETUP.md` for required host-app integration.
 - `AdmobBootstrapper` — idempotent SDK startup that gates on UMP consent.
 - `AdmobConsentCoordinator` — observable consent state, refresh, and privacy
   options form presentation.
-- `AdmobBanner` + `.adBanner(_:)` modifier — adaptive banner that resizes with
-  the container width and never hard-codes `50pt`.
+- `AdmobBanner` + `.adBanner(_:)` modifier — standard fixed 320x50
+  banner pinned to a safe-area edge. Predictable height that won't shift
+  bottom toolbars or floating action buttons.
+- `AdmobAdaptiveBanner` + `.adAdaptiveBanner(_:)` modifier — anchored
+  adaptive banner with a dynamic 50–150pt height
+  (`largeAnchoredAdaptiveBanner(width:)`). Use when the layout can absorb
+  taller inventory for higher fill.
 - `AdmobVerticalBanner` — fixed 120x600 `Skyscraper` slot for sidebar
   layouts (AdMob has no true "vertical adaptive" format).
 - `AdmobInterstitialController`, `AdmobRewardedController`,

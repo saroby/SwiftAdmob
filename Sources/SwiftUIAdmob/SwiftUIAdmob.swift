@@ -13,5 +13,5 @@ import Foundation
 ///   ``docs/HOST_APP_SETUP.md`` in the repository.
 public enum SwiftUIAdmob {
     /// Semantic version string of the currently linked `SwiftUIAdmob` package.
-    public static let packageVersion = "1.0.2"
+    public static let packageVersion = "1.0.3"
 }
