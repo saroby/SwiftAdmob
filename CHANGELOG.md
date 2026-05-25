@@ -6,6 +6,27 @@ All notable changes to SwiftUIAdmob are documented here. Format follows
 
 ## [Unreleased]
 
+## [1.0.2] - 2026-05-25
+
+### Added
+
+- `AdmobVerticalBanner` — new SwiftUI view that lays out a fixed 120x600
+  `AdSizeSkyscraper` banner. AdMob does not ship a true "vertical
+  adaptive" format; `Skyscraper` is the canonical vertical fixed slot
+  still exposed by the current Swift SDK (`AdSizeWideSkyscraper` /
+  160x600 was removed upstream). Reads ``AdmobBootstrapper`` from the
+  environment like ``AdmobBanner``; defaults to the same
+  ``AdUnitIDMap/banner`` ID but callers can pass an explicit
+  `adUnitID:` for size-specific inventory.
+
+### Changed
+
+- `BannerHost` (internal) now takes an explicit `adSize: AdSize` so the
+  same `UIViewRepresentable` backs both ``AdmobBanner`` (320x50) and
+  ``AdmobVerticalBanner`` (120x600). Reload decision in
+  `updateUIView(_:context:)` also triggers when the requested ad size
+  changes, not just on width/unit change.
+
 ## [1.0.1] - 2026-05-24
 
 ### Changed

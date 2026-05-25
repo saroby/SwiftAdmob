@@ -9,7 +9,7 @@ to the host app.
 
 ## Status
 
-Version **1.0.1**. See `docs/ARCHITECTURE.md` and `docs/LLM_CONTEXT.md` for
+Version **1.0.2**. See `docs/ARCHITECTURE.md` and `docs/LLM_CONTEXT.md` for
 design rationale and `docs/HOST_APP_SETUP.md` for required host-app integration.
 
 ## Features
@@ -19,6 +19,8 @@ design rationale and `docs/HOST_APP_SETUP.md` for required host-app integration.
   options form presentation.
 - `AdmobBanner` + `.adBanner(_:)` modifier — adaptive banner that resizes with
   the container width and never hard-codes `50pt`.
+- `AdmobVerticalBanner` — fixed 120x600 `Skyscraper` slot for sidebar
+  layouts (AdMob has no true "vertical adaptive" format).
 - `AdmobInterstitialController`, `AdmobRewardedController`,
   `AdmobRewardedInterstitialController` — async `load` + `present`, one-shot
   semantics, and optional auto-reload after dismissal.

@@ -59,6 +59,7 @@ public struct AdmobBanner: View {
 
         BannerHost(
             adUnitID: resolvedID,
+            adSize: AdSizeBanner,
             width: measuredWidth,
             isEnabled: bootstrapper.canRequestAds,
             eventSink: bootstrapper.eventSink,
@@ -83,6 +84,64 @@ public struct AdmobBanner: View {
     public static func height(forWidth width: CGFloat) -> CGFloat {
         guard width > 0 else { return 0 }
         return AdSizeBanner.size.height
+    }
+}
+
+// MARK: - Vertical banner view
+
+/// SwiftUI banner view that lays out using AdMob's fixed 120x600
+/// ``AdSizeSkyscraper`` size.
+///
+/// AdMob does not ship a true "vertical adaptive" banner — `Skyscraper`
+/// (120x600) is the canonical vertical fixed format still exposed by the
+/// current Swift SDK (`AdSizeWideSkyscraper` / 160x600 was removed). Use
+/// this for sidebar placements where a tall, narrow ad slot is desired.
+/// The view reserves `120x600` regardless of container; the host layout
+/// must be wide enough to fit 120pt without clipping.
+///
+/// Reads ``AdmobBootstrapper`` from the environment and gates ad requests on
+/// ``AdmobBootstrapper/canRequestAds``. When `canRequestAds` flips to `false`
+/// mid-session, the underlying banner is hidden until it flips back.
+///
+/// - Note: Falls back to ``AdUnitIDMap/banner`` when `adUnitID` is `nil`. For
+///   production you should usually pass an explicit ad unit ID configured for
+///   the 120x600 slot, since AdMob serves different inventory by size.
+@MainActor
+public struct AdmobVerticalBanner: View {
+    private let explicitAdUnitID: String?
+    private let onEvent: ((AdmobBannerEvent) -> Void)?
+
+    @Environment(AdmobBootstrapper.self) private var bootstrapper
+
+    /// Fixed ``AdSizeSkyscraper`` size (120x600) used by ``AdmobVerticalBanner``.
+    public static let size: CGSize = AdSizeSkyscraper.size
+
+    /// Create a vertical banner view.
+    /// - Parameters:
+    ///   - adUnitID: Explicit ad unit ID. When `nil`, falls back to
+    ///     ``AdUnitIDMap/banner`` from the environment bootstrapper.
+    ///   - onEvent: Optional per-instance event callback.
+    public init(
+        adUnitID: String? = nil,
+        onEvent: ((AdmobBannerEvent) -> Void)? = nil
+    ) {
+        self.explicitAdUnitID = adUnitID
+        self.onEvent = onEvent
+    }
+
+    public var body: some View {
+        let resolvedID = explicitAdUnitID ?? bootstrapper.configuration.adUnits.banner
+        let size = AdmobVerticalBanner.size
+
+        BannerHost(
+            adUnitID: resolvedID,
+            adSize: AdSizeSkyscraper,
+            width: size.width,
+            isEnabled: bootstrapper.canRequestAds,
+            eventSink: bootstrapper.eventSink,
+            onEvent: onEvent
+        )
+        .frame(width: size.width, height: size.height)
     }
 }
 
@@ -143,6 +202,9 @@ public struct AdmobBannerModifier: ViewModifier {
 @MainActor
 struct BannerHost: UIViewRepresentable {
     let adUnitID: String?
+    /// Ad size to request. ``AdmobBanner`` passes ``AdSizeBanner`` (320x50);
+    /// ``AdmobVerticalBanner`` passes ``AdSizeSkyscraper`` (120x600).
+    let adSize: AdSize
     let width: CGFloat
     let isEnabled: Bool
     let eventSink: AdmobEventSink
@@ -182,15 +244,15 @@ struct BannerHost: UIViewRepresentable {
             uiView.rootViewController = RootViewControllerLocator.find()
         }
 
-        let nextSize = AdSizeBanner
         let widthChanged = abs(context.coordinator.lastRequestedWidth - width) >= 1
         let unitChanged = uiView.adUnitID != adUnitID
-        let needsReload = unitChanged || widthChanged
+        let sizeChanged = !adSizesEqual(uiView.adSize, adSize)
+        let needsReload = unitChanged || widthChanged || sizeChanged
 
         guard needsReload else { return }
 
         uiView.adUnitID = adUnitID
-        uiView.adSize = nextSize
+        uiView.adSize = adSize
         context.coordinator.lastRequestedWidth = width
 
         eventSink.send(.adLoadStarted(.banner))
@@ -241,4 +303,14 @@ struct BannerHost: UIViewRepresentable {
             }
         }
     }
+}
+
+/// Compare two ``AdSize`` values by their resolved ``CGSize``.
+///
+/// `AdSize` does not conform to `Equatable`; comparing the underlying
+/// `size` keeps the reload-decision logic in
+/// ``BannerHost/updateUIView(_:context:)`` correct when callers swap between
+/// e.g. ``AdSizeBanner`` and ``AdSizeSkyscraper``.
+private func adSizesEqual(_ lhs: AdSize, _ rhs: AdSize) -> Bool {
+    lhs.size == rhs.size
 }
