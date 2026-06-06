@@ -18,7 +18,7 @@ has been created yet.
 - Small, predictable APIs that hide UIKit delegate noise without hiding AdMob
   policy responsibilities from the app developer.
 
-Minimum supported platform: iOS 26.
+Minimum supported platform: iOS 17.
 
 ## External Baseline
 
@@ -26,12 +26,12 @@ Checked on 2026-05-16 against current official sources:
 
 - Google Mobile Ads iOS setup documents Xcode 16.0+ and iOS 13.0+ as SDK
   prerequisites. This package deliberately raises the consumer-facing minimum to
-  iOS 26.
+  iOS 17.
 - Google's official SPM package is
   `https://github.com/googleads/swift-package-manager-google-mobile-ads.git`.
   The current repository package manifest exposes the `GoogleMobileAds` product,
   depends on `GoogleUserMessagingPlatform`, and currently points at Google Mobile
-  Ads SDK 13.3.0.
+  Ads SDK 13.4.0.
 - Host apps must provide `GADApplicationIdentifier` and `SKAdNetworkItems` in
   their `Info.plist`. A Swift package cannot reliably own those app-level
   declarations.
@@ -53,7 +53,7 @@ Checked on 2026-05-16 against current official sources:
 - Treat consent, test mode, and production ad unit IDs as first-class state.
 - Make invalid production use hard, especially accidental live ad requests in
   development.
-- Use iOS 26-era Swift APIs freely: `async`/`await`, `@MainActor`, `Observation`,
+- Use iOS 17-era Swift APIs freely: `async`/`await`, `@MainActor`, `Observation`,
   scene phase integration, and SwiftUI layout APIs.
 - Avoid wrapping every Google SDK property. Expose stable workflows first and
   provide escape hatches only where the SDK surface is unlikely to stay hidden.

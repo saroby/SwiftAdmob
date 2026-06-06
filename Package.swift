@@ -4,7 +4,7 @@ import PackageDescription
 let package = Package(
     name: "SwiftUIAdmob",
     platforms: [
-        .iOS("26.0")
+        .iOS(.v17)
     ],
     products: [
         .library(
@@ -15,7 +15,7 @@ let package = Package(
     dependencies: [
         .package(
             url: "https://github.com/googleads/swift-package-manager-google-mobile-ads.git",
-            from: "13.3.0"
+            from: "13.4.0"
         )
     ],
     targets: [

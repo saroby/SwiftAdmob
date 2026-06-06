@@ -1,7 +1,7 @@
 # SwiftUIAdmob
 
 A thin, SwiftUI-first Swift Package Manager layer over the official Google Mobile
-Ads SDK and User Messaging Platform (UMP) SDK. Targets **iOS 26+** and **Swift 6**.
+Ads SDK and User Messaging Platform (UMP) SDK. Targets **iOS 17+** and **Swift 6**.
 
 `SwiftUIAdmob` aims to reduce the boilerplate of integrating AdMob into SwiftUI
 apps without hiding the policy and configuration responsibilities that belong

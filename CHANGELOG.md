@@ -6,6 +6,13 @@ All notable changes to SwiftUIAdmob are documented here. Format follows
 
 ## [Unreleased]
 
+### Changed
+
+- Minimum deployment target lowered from iOS 26 to iOS 17 so more host
+  apps can adopt the package. No source changes were required — the
+  package already compiles and passes tests against the iOS 17 SDK floor.
+- Google Mobile Ads SDK dependency bumped from 13.3.0 to 13.4.0.
+
 ## [1.0.3] - 2026-05-25
 
 ### Added

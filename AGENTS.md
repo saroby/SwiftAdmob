@@ -11,9 +11,9 @@ If you are integrating this package into a host app, read
 - **Version**: 1.0.1, released. Public API is **stable** — do not rename,
   remove, or change signatures without an explicit user request to bump the
   major version.
-- **Platform**: iOS 26 minimum, Swift 6 with strict concurrency. Do not
+- **Platform**: iOS 17 minimum, Swift 6 with strict concurrency. Do not
   lower either bound.
-- **Dependency**: Google Mobile Ads SDK 13.3.0 (pinned via SPM). Do not
+- **Dependency**: Google Mobile Ads SDK 13.4.0 (pinned via SPM). Do not
   upgrade without an explicit request — Google releases can introduce
   policy or behavioural changes that the package must absorb.
 

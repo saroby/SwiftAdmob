@@ -10,7 +10,7 @@ For host-app integration help, read **[`docs/AI_USAGE.md`](docs/AI_USAGE.md)**.
 - Public API is **stable at v1.0.1** — no renames or signature changes.
 - Tests use `FakeMobileAdsBridge` / `FakeConsentBridge` — never hit live
   Google ad servers.
-- iOS 26 / Swift 6 strict concurrency are fixed; do not lower.
+- iOS 17 / Swift 6 strict concurrency are fixed; do not lower.
 - Do not absorb host responsibilities (`Info.plist`, ATT, placement
   policy). They live in `docs/HOST_APP_SETUP.md`.
 - If you change public usage, update `docs/AI_USAGE.md` and

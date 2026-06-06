@@ -10,8 +10,8 @@ file is the conceptual map; `AI_USAGE.md` is the cookbook.
 
 - **Version**: 1.0.1, released. Public API is stable — do not rename or
   break signatures.
-- **Platform**: iOS 26 minimum, Swift 6 strict concurrency.
-- **Dependency**: Google Mobile Ads SDK 13.3.0 via
+- **Platform**: iOS 17 minimum, Swift 6 strict concurrency.
+- **Dependency**: Google Mobile Ads SDK 13.4.0 via
   `https://github.com/googleads/swift-package-manager-google-mobile-ads.git`.
 - **Source**: 13 files under `Sources/SwiftUIAdmob/`.
 - **Tests**: Swift Testing suites under `Tests/SwiftUIAdmobTests/`. Live
